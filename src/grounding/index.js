@@ -14,7 +14,8 @@ export function createKnowledgeSource(env = process.env) {
     return new FoundryIQKnowledgeSource({
       endpoint: env.FOUNDRY_IQ_ENDPOINT,
       apiKey: env.FOUNDRY_IQ_API_KEY,
-      index: env.FOUNDRY_IQ_INDEX
+      index: env.FOUNDRY_IQ_INDEX,
+      semantic: String(env.FOUNDRY_IQ_SEMANTIC).toLowerCase() === 'true'
     });
   }
   return new LocalKnowledgeSource();

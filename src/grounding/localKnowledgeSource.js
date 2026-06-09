@@ -1,6 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { parseSource } from './chunk.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SOURCES_DIR = path.resolve(__dirname, '../../data/sources');
@@ -50,30 +51,15 @@ export class LocalKnowledgeSource {
   }
 
   #ingest(raw, file) {
-    const lines = raw.split('\n');
-    const titleLine = lines.find((l) => l.startsWith('# ')) || `# ${file}`;
-    const sourceLine = lines.find((l) => l.startsWith('> Source:')) || '> Source: PlainPath knowledge base';
-    const sourceTitle = titleLine.replace(/^#\s+/, '').trim();
-    const sourceMeta = sourceLine.replace(/^>\s*Source:\s*/, '').trim();
-    const urlMatch = sourceMeta.match(/https?:\/\/\S+/);
-    const sourceUrl = urlMatch ? urlMatch[0] : '';
-
-    // Split into passages on "## " section headers.
-    const sections = raw.split(/\n(?=##\s)/);
-    let idx = 0;
-    for (const section of sections) {
-      const heading = (section.match(/^##\s+(.*)$/m) || [])[1];
-      if (!heading) continue; // skip the title block before the first "##"
-      const body = section.replace(/^##\s+.*$/m, '').trim();
-      if (!body) continue;
-      const text = `${heading}. ${body}`;
+    const { sourceTitle, sourceUrl, passages } = parseSource(raw, file);
+    for (const p of passages) {
       this.passages.push({
-        id: `${file}#${idx++}`,
+        id: p.id,
         sourceTitle,
-        section: heading.trim(),
+        section: p.section,
         sourceUrl,
-        text,
-        terms: tokenize(text)
+        text: p.text,
+        terms: tokenize(p.text)
       });
     }
   }

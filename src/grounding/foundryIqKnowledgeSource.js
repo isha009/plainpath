@@ -15,32 +15,36 @@
  * the agent and the rest of the app are untouched.
  */
 export class FoundryIQKnowledgeSource {
-  constructor({ endpoint, apiKey, index }) {
+  constructor({ endpoint, apiKey, index, semantic = false }) {
     if (!endpoint || !apiKey) {
       throw new Error('FoundryIQKnowledgeSource requires endpoint and apiKey');
     }
     this.endpoint = endpoint.replace(/\/$/, '');
     this.apiKey = apiKey;
     this.index = index || 'tenant-rights';
+    // Semantic ranking needs a Basic+ tier. Off by default so the Free tier works.
+    this.semantic = semantic;
   }
 
   async retrieve(query, { topK = 4 } = {}) {
     const url = `${this.endpoint}/indexes/${encodeURIComponent(this.index)}/docs/search?api-version=2024-07-01`;
+    const body = { search: query, top: topK };
+    if (this.semantic) {
+      // Semantic ranking gives Foundry IQ-grade grounded relevance + captions.
+      Object.assign(body, {
+        queryType: 'semantic',
+        semanticConfiguration: 'default',
+        captions: 'extractive',
+        answers: 'extractive'
+      });
+    }
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'api-key': this.apiKey
       },
-      body: JSON.stringify({
-        search: query,
-        top: topK,
-        // Semantic ranking gives Foundry IQ-grade grounded relevance + captions.
-        queryType: 'semantic',
-        semanticConfiguration: 'default',
-        captions: 'extractive',
-        answers: 'extractive'
-      })
+      body: JSON.stringify(body)
     });
 
     if (!res.ok) {
