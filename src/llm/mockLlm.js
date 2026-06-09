@@ -26,7 +26,10 @@ export class MockLLM {
   }
 
   #synthesize({ question, passages, minScore }) {
-    const supported = passages.filter((p) => p.score >= minScore);
+    // Keep each passage's 1-based SOURCE number so markers and citations align.
+    const supported = passages
+      .map((p, i) => ({ p, n: i + 1 }))
+      .filter(({ p }) => p.score >= minScore);
 
     if (supported.length === 0) {
       return {
@@ -41,19 +44,19 @@ export class MockLLM {
       };
     }
 
-    const steps = supported.map((p, i) => ({
+    const steps = supported.map(({ p, n }) => ({
       stage: 'reason',
-      detail: `Source [${i + 1}] "${p.sourceTitle} — ${p.section}" is relevant (grounding ${Math.round(p.score * 100)}%).`
+      detail: `Source [${n}] "${p.sourceTitle} — ${p.section}" is relevant (grounding ${Math.round(p.score * 100)}%).`
     }));
 
     // Build a grounded answer from each cited passage and attach citation
     // markers. Strip the leading "Section. " prefix, then take a clean snippet.
-    const bullets = supported.map((p, i) => {
+    const bullets = supported.map(({ p, n }) => {
       const body = p.section ? p.text.replace(`${p.section}.`, '').trim() : p.text;
       let snippet = body.slice(0, 220);
       const lastStop = snippet.lastIndexOf('. ');
       if (lastStop > 80) snippet = snippet.slice(0, lastStop + 1);
-      return `• ${p.section}: ${snippet.trim()} [${i + 1}]`;
+      return `• ${p.section}: ${snippet.trim()} [${n}]`;
     });
 
     steps.push({
@@ -68,7 +71,7 @@ export class MockLLM {
         `Here is what the sources say about: "${question}"\n\n` +
         bullets.join('\n') +
         `\n\nThis is general information from public sources, not legal advice. Rules vary by state and situation — confirm with your local housing authority or a tenant attorney.`,
-      citations: supported.map((p) => p.id)
+      citations: supported.map(({ n }) => n)
     };
   }
 

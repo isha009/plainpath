@@ -29,6 +29,28 @@ test('refuses an out-of-scope question instead of guessing', async () => {
   assert.equal(res.citations.length, 0);
 });
 
+test('accepts a grounded answer even when the model cites by number, not id', async () => {
+  // Regression: live gpt-4o returns citations as [1,2] (source numbers), not ids.
+  // The agent must still recognize the answer as grounded.
+  const numberCiting = {
+    describe: () => 'number-citing',
+    async complete({ task }) {
+      if (task === 'decompose') return { queries: ['landlord changed the locks eviction legal'] };
+      return {
+        decision: 'answered',
+        steps: [{ stage: 'reason', detail: 'Lock changes are an illegal self-help eviction.' }],
+        answer: 'No — changing the locks is an illegal self-help eviction [1].',
+        citations: [1]
+      };
+    }
+  };
+  const agent = new PlainPathAgent({ knowledge: new LocalKnowledgeSource(), llm: numberCiting });
+  const res = await agent.ask('My landlord changed the locks while I was out. Is that legal?');
+  assert.equal(res.decision, 'answered');
+  assert.ok(res.citations.length > 0, 'numeric citations must resolve to sources');
+  assert.ok(typeof res.citations[0].n === 'number');
+});
+
 test('agent forces refusal when nothing clears the grounding threshold', async () => {
   // An LLM that always tries to answer with a bogus citation.
   const overconfident = {

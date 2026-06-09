@@ -73,17 +73,21 @@ export class PlainPathAgent {
     for (const step of result.steps) emit(step.stage, step.detail);
     emit('decide', `Decision: ${result.decision.toUpperCase()}.`);
 
-    // Resolve citation ids to full source objects for the UI.
-    const citationObjs = result.citations
-      .map((id) => passages.find((p) => p.id === id))
-      .filter(Boolean)
-      .map((p) => ({ id: p.id, sourceTitle: p.sourceTitle, section: p.section, sourceUrl: p.sourceUrl, score: p.score }));
+    // Resolve validated source numbers to full source objects for the UI.
+    const citationObjs = result.citationNums.map((n) => {
+      const p = passages[n - 1];
+      return { n, id: p.id, sourceTitle: p.sourceTitle, section: p.section, sourceUrl: p.sourceUrl, score: p.score };
+    });
+
+    // The grounding meter reflects what was actually cited: the strongest cited
+    // source, or 0 when the agent declined to answer.
+    const groundingScore = citationObjs.length ? Math.max(...citationObjs.map((c) => c.score)) : 0;
 
     return {
       decision: result.decision,
       answer: result.answer,
       citations: citationObjs,
-      groundingScore: topScore,
+      groundingScore,
       disclaimer: DISCLAIMER
     };
   }
@@ -115,15 +119,26 @@ export class PlainPathAgent {
 
   /**
    * Defense in depth: the agent — not the model — has the final say on whether
-   * an answer is grounded. Drops citations that were not actually retrieved and
-   * forces a refusal when nothing clears the grounding threshold.
+   * an answer is grounded. Citations are resolved by SOURCE NUMBER, taken from
+   * the [n] markers actually present in the answer (with the model's citations
+   * array as a fallback), so it is robust to however the model formats them.
+   * Any number that doesn't map to a retrieved, above-threshold passage is
+   * dropped, and a refusal is forced when nothing clears the threshold.
    */
   #enforceGrounding(result, passages) {
-    const supported = passages.filter((p) => p.score >= this.minScore);
-    const supportedIds = new Set(supported.map((p) => p.id));
-    const validCitations = result.citations.filter((id) => supportedIds.has(id));
+    const supported = new Set(
+      passages.map((p, i) => (p.score >= this.minScore ? i + 1 : 0)).filter(Boolean)
+    );
 
-    if (supported.length === 0 || (result.decision !== 'refused' && validCitations.length === 0)) {
+    const fromMarkers = [...String(result.answer).matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1]));
+    const fromModel = (result.citations || [])
+      .map((c) => Number(String(c).replace(/[^\d]/g, '')))
+      .filter(Boolean);
+    const citationNums = [...new Set([...fromMarkers, ...fromModel])]
+      .filter((n) => supported.has(n))
+      .sort((a, b) => a - b);
+
+    if (supported.size === 0 || (result.decision !== 'refused' && citationNums.length === 0)) {
       return {
         decision: 'refused',
         steps: [
@@ -132,9 +147,9 @@ export class PlainPathAgent {
         ],
         answer:
           "I don't have a source that reliably covers this, so I won't guess. It may be outside the tenant-rights topics I have documents for, or too specific to your local law. For a dependable answer, contact your local legal aid office or tenant union.",
-        citations: []
+        citationNums: []
       };
     }
-    return { ...result, citations: validCitations };
+    return { ...result, citationNums };
   }
 }

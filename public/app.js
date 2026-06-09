@@ -96,10 +96,12 @@ function renderResult(result) {
 }
 
 // Turn [1], [2] markers into focusable buttons that jump to the source.
+// Markers reference SOURCE numbers (n); only linkify ones we actually have.
 function linkifyCitations(text, citations) {
+  const nums = new Set(citations.map((c) => c.n));
   const escaped = text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   return escaped.replace(/\[(\d+)\]/g, (m, n) => {
-    if (Number(n) > citations.length) return m;
+    if (!nums.has(Number(n))) return m;
     return `<button class="cite" data-n="${n}" aria-label="Jump to source ${n}">[${n}]</button>`;
   });
 }
@@ -107,15 +109,15 @@ function linkifyCitations(text, citations) {
 function renderCitations(citations) {
   citationsEl.innerHTML = '';
   if (!citations.length) return;
-  citations.forEach((c, i) => {
+  citations.forEach((c) => {
     const div = document.createElement('div');
     div.className = 'src';
-    div.id = `src-${i + 1}`;
+    div.id = `src-${c.n}`;
     const title = `${c.sourceTitle} — ${c.section}`;
     const link = c.sourceUrl
       ? ` · <a href="${c.sourceUrl}" target="_blank" rel="noopener noreferrer">source</a>`
       : '';
-    div.innerHTML = `<span class="num">[${i + 1}]</span>${title} (grounding ${Math.round(c.score * 100)}%)${link}`;
+    div.innerHTML = `<span class="num">[${c.n}]</span>${title} (grounding ${Math.round(c.score * 100)}%)${link}`;
     citationsEl.appendChild(div);
   });
 
