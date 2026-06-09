@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlainPath — Know your tenant rights, with sources</title>
+  <meta name="description" content="A grounded tenant-rights assistant that cites its sources and refuses to guess." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <h1>PlainPath</h1>
+      <p class="tagline">Know your tenant rights — grounded in real sources, never guessed.</p>
+      <p class="status" id="status" aria-live="polite">Checking backends…</p>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <section aria-labelledby="ask-heading">
+      <h2 id="ask-heading" class="visually-hidden">Ask a question</h2>
+      <form id="ask-form" autocomplete="off">
+        <label for="question">Ask a tenant-rights question</label>
+        <div class="input-row">
+          <input
+            id="question"
+            name="question"
+            type="text"
+            required
+            placeholder="e.g. Can my landlord keep my security deposit for normal wear and tear?"
+            aria-describedby="input-help"
+          />
+          <button type="submit" id="ask-btn">Ask</button>
+        </div>
+        <p id="input-help" class="help">PlainPath answers only from its public source documents and cites every claim.</p>
+      </form>
+
+      <div class="examples" aria-label="Example questions">
+        <button class="chip" type="button">Can my landlord keep my deposit for normal wear and tear?</button>
+        <button class="chip" type="button">Can my landlord evict me by changing the locks?</button>
+        <button class="chip" type="button">My heat is broken and the landlord won't fix it. What can I do?</button>
+        <button class="chip" type="button">Can I get a discount on my parking ticket?</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="reasoning-heading" id="reasoning-section" hidden>
+      <h2 id="reasoning-heading">How PlainPath is reasoning</h2>
+      <ol id="steps" class="steps" aria-live="polite"></ol>
+    </section>
+
+    <section aria-labelledby="answer-heading" id="answer-section" hidden>
+      <h2 id="answer-heading">Answer</h2>
+      <div class="answer-card">
+        <div class="answer-meta">
+          <span id="decision-badge" class="badge"></span>
+          <span class="grounding" aria-label="Grounding strength">
+            <span class="grounding-label">Grounding</span>
+            <span class="meter" aria-hidden="true"><span id="meter-fill" class="meter-fill"></span></span>
+            <span id="grounding-pct">0%</span>
+          </span>
+        </div>
+        <div id="answer-text" class="answer-text"></div>
+        <div id="citations" class="citations"></div>
+        <p id="disclaimer" class="disclaimer"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>PlainPath · Microsoft Agents League 2026 · Reasoning Agents track · grounded with Foundry IQ.</p>
+      <p class="small">General information, not legal advice.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

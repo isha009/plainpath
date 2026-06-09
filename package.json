@@ -1,0 +1,27 @@
+{
+  "name": "plainpath",
+  "version": "1.0.0",
+  "description": "Grounded tenant-rights navigator — a multi-step reasoning agent that cites its sources and refuses to guess. Microsoft Agents League 2026, Foundry IQ.",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "keywords": [
+    "ai-agent",
+    "foundry-iq",
+    "rag",
+    "grounding",
+    "tenant-rights",
+    "accessibility"
+  ],
+  "license": "MIT"
+}
