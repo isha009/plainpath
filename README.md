@@ -11,6 +11,10 @@ don't support it** instead of hallucinating legal advice.
 >
 > ⚠️ General information, **not legal advice**. Built on public sources only — no confidential information.
 
+### 🎥 Demo
+
+**Watch the 2-minute demo:** https://youtu.be/qWtn-JTKDuc
+
 ---
 
 ## Why it's different
